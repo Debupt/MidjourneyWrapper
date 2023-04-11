@@ -10,6 +10,7 @@ class MidjourneyBot:
         self._server_id = self._config.get('server_id', None)
         self._channel_id = self._config.get('channel_id', None)
         self._proxy = self._config.get('proxy', None)
+        self._proxies = None
         if self._proxy:
             self._proxies = {
                 'http': self._proxy,
