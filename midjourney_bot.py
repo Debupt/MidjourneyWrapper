@@ -3,6 +3,11 @@ import requests
 
 
 class MidjourneyBot:
+    _APPLICATION_ID = '936929561302675456'
+    _SESSION_ID = '1aaff965b0542ea8ed94127f3db5668a'
+    _DATA_VERSION = '1118961510123847772'
+    _DATA_ID = '938956540159881230'
+    _APPLICATION_COMMMAND_VERSION = '1118961510123847772'
 
     def __init__(self, config_file='config.json'):
         self._config = self._parse_json(config_file)
@@ -50,13 +55,13 @@ class MidjourneyBot:
     def ask(self, prompt):
         payload = {
             "type": 2,
-            "application_id": "936929561302675456",
+            "application_id": self._APPLICATION_ID,
             "guild_id": self._server_id,
             "channel_id": self._channel_id,
-            "session_id": "2fb980f65e5c9a77c96ca01f2c242cf6",
+            "session_id": self._SESSION_ID,
             "data": {
-                "version": "1077969938624553050",
-                "id": "938956540159881230",
+                "version": self._DATA_VERSION,
+                "id": self._DATA_ID,
                 "name": "imagine",
                 "type": 1,
                 "options": [{
@@ -70,7 +75,7 @@ class MidjourneyBot:
                     "application_id":
                         "936929561302675456",
                     "version":
-                        "1077969938624553050",
+                        self._APPLICATION_COMMMAND_VERSION,
                     "default_permission":
                         True,
                     "default_member_permissions":
@@ -113,8 +118,8 @@ class MidjourneyBot:
             "channel_id": self._channel_id,
             "message_flags": 0,
             "message_id": self.message_id(message),
-            "application_id": "936929561302675456",
-            "session_id": "45bc04dd4da37141a5f73dfbfaf5bdcf",
+            "application_id": self._APPLICATION_ID,
+            "session_id": self._SESSION_ID,
             "data": {
                 "component_type": 2,
                 "custom_id": "MJ::JOB::upsample::{}::{}".format(index, self.message_hash(message))
@@ -137,8 +142,8 @@ class MidjourneyBot:
             "channel_id": self._channel_id,
             "message_flags": 0,
             "message_id": self.message_id(message),
-            "application_id": "936929561302675456",
-            "session_id": "1f3dbdf09efdf93d81a3a6420882c92c",
+            "application_id": self._APPLICATION_ID,
+            "session_id": self._SESSION_ID,
             "data": {
                 "component_type": 2,
                 "custom_id": "MJ::JOB::upsample_max::1::{}::SOLO".format(self.message_hash(message))
