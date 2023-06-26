@@ -12,8 +12,12 @@ update config.json before use this wrapper
 
 ## Example Usage
 
-`python3 example.py`  
-prompt based picture would be saved in `test.png` file after a few second
+```bash
+# for single request
+python3 example.py midjourneybot [--prompt {prompt}]
+# for batch requests
+python3 example.py batchbot [--prompt {prompt} --prompt {prompt}]
+```
 
 ## TODO
 

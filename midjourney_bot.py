@@ -1,5 +1,11 @@
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from queue import Queue
+import logging
 import json
 import requests
+import time
+import threading
 
 
 class MidjourneyBot:
@@ -178,3 +184,107 @@ class MidjourneyBot:
         )
         with open(image_filename, 'wb') as fp:
             fp.write(response.content)
+
+
+class BatchBot(MidjourneyBot):
+
+    def __init__(self, config_file='config.json', image_folder='images'):
+        super().__init__(config_file)
+        self._image_folder = Path(image_folder)
+        self._image_folder.mkdir(parents=True, exist_ok=True)
+
+        self._prompts = Queue()
+
+        # collect finished messages with prompt to message info dict
+        self._messages_info_lock = threading.Lock()
+        self._messages_info = {}
+
+        # collect user requests with message-id to message info dict
+        # message info could use for later upscale
+        self._results_lock = threading.Lock()
+        self._results = {}
+
+        self._stop_event = threading.Event()
+
+        self._thread_pool = ThreadPoolExecutor(max_workers=2)
+        self._thread_pool.submit(self.imagine, self._stop_event)
+        self._thread_pool.submit(self.fetch, self._stop_event)
+
+        self._worker_pool = ThreadPoolExecutor(max_workers=10)
+
+    @property
+    def results(self):
+        with self._results_lock:
+            return self._results
+
+    def cancel_tasks(self):
+        self._stop_event.set()
+
+    def prompt(self, prompt):
+        self._prompts.put(prompt)
+        self._worker_pool.submit(self.worker, prompt)
+
+    def imagine(self, event: threading.Event):
+        while not event.is_set():
+            if not self._prompts.empty():
+                prompt = self._prompts.get()
+                self.ask(prompt)
+                self._prompts.task_done()
+            time.sleep(3)
+
+    def _save_image(self, attachments):
+        response = requests.get(
+            url=attachments['url'],
+            headers=self._header,
+            proxies=self._proxies,
+            timeout=30,
+        )
+        logging.info(f'Downloading {attachments["filename"]}')
+        image_file = self._image_folder / attachments["filename"]
+        with open(image_file, 'wb') as fp:
+            fp.write(response.content)
+
+    def _parse_messages(self, messages):
+        for message in messages[::-1]:
+            if not message:
+                continue
+            try:
+                content = message['content'].split("**")[1]
+                if '--' in content:
+                    content = content.split('--')[0].strip()
+                if self._validate_image_url(message):
+                    with self._messages_info_lock:
+                        self._messages_info[content] = message
+            except IndexError as e:
+                logging.exception(e)
+                continue
+
+    def _validate_image_url(self, message_info):
+        if message_info['attachments'] and message_info['attachments'][0][
+                'content_type'] == 'image/png':
+            return True
+        return False
+
+    def fetch(self, event: threading.Event):
+        while not event.is_set():
+            messages_url = f'https://discord.com/api/v9/channels/{self._channel_id}/messages'
+            response = requests.get(
+                url=messages_url,
+                headers=self._header,
+                proxies=self._proxies,
+                timeout=30,
+            )
+            self._parse_messages(json.loads(response.text))
+            time.sleep(10)
+
+    def worker(self, prompt):
+        while True:
+            with self._messages_info_lock:
+                message_info = self._messages_info.get(prompt, None)
+            if message_info:
+                message_id = message_info['id']
+                self._save_image(message_info['attachments'][0])
+                with self._results_lock:
+                    self._results[message_id] = message_info
+                return
+            time.sleep(5)
