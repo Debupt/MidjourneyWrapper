@@ -13,6 +13,23 @@ def main():
 
 @main.command()
 @click.option('--prompt', default='a cute fat cat')
+@click.option('--index')
+def up_scale(prompt, index):
+    midjourney_bot = MidjourneyBot()
+    messages = midjourney_bot.messages(50)
+    message_info = None
+    for message in messages:
+        if prompt in midjourney_bot.content(message):
+            message_info = message
+            break
+    if not message_info:
+        raise AttributeError(f'Failed to corresponding prompt `{prompt}`')
+
+    midjourney_bot.up_scale(index, message_info)
+
+
+@main.command()
+@click.option('--prompt', default='a cute fat cat')
 def midjourneybot(prompt):
     midjourney_bot = MidjourneyBot()
     midjourney_bot.ask(prompt)

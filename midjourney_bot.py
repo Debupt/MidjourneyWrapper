@@ -38,7 +38,7 @@ class MidjourneyBot:
         return message['content']
 
     def message_id(self, message):
-        return message['attachments'][0]['id']
+        return message['id']
 
     def message_hash(self, message):
         return self.get_image_url(message).split('_')[-1].split('.')[0]
